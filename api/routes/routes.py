@@ -29,4 +29,13 @@ def create(data: RIn, db: Session = Depends(get_session)):
 def search(from_code: str, to_code: str, date: str,
            db: Session = Depends(get_session)):
     return [dict(r._mapping) for r in db.execute(text("""
-        SELECT r.id, t.number AS train_number, t.name AS train
+        SELECT r.id, t.number AS train_number, t.name AS train_name,
+               s1.name AS from_st, s2.name AS to_st,
+               r.depart, r.arrive, r.base_price
+        FROM routes r
+        JOIN trains t ON t.id = r.train_id
+        JOIN stations s1 ON s1.id = r.from_station_id
+        JOIN stations s2 ON s2.id = r.to_station_id
+        WHERE s1.code = :f AND s2.code = :t AND r.depart::date = :d
+        ORDER BY r.depart
+    """), {"f": from_code, "t": to_code, "d": date}).fetchall()]
